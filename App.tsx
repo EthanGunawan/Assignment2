@@ -45,6 +45,7 @@ const StatisticsProvider = ({ children }: { children: React.ReactNode }): JSX.El
 
 const AppContent = (): JSX.Element => {
   const [currentScreen, setCurrentScreen] = useState<'home' | 'stats'>('home');
+  const [displayNumber, setDisplayNumber] = useState('...');
   const [number, setNumber] = useState('...');
   const context = useContext(StatisticsContext)!;
   const { stats, updateStat, clearStats } = context;
@@ -52,14 +53,34 @@ const AppContent = (): JSX.Element => {
   useEffect(() => {
     if (currentScreen === 'home') {
       setNumber('...');
+      setDisplayNumber('...');
     }
   }, [currentScreen]);
 
   const generateNumber = useCallback((): void => {
-    const num = Math.floor(Math.random() * 9) + 1;
-    setNumber(num.toString());
-    updateStat(num);
-  }, [updateStat]);
+    if (currentScreen !== 'home') return;
+
+    const finalNum = Math.floor(Math.random() * 9) + 1;
+    setNumber(finalNum.toString());
+    updateStat(finalNum);
+
+    const spinDuration = 800;
+    const stepDuration = 50;
+    const steps = spinDuration / stepDuration;
+    
+    let currentStep = 0;
+    
+    const spinInterval = setInterval(() => {
+      currentStep++;
+      const fakeNum = Math.floor(Math.random() * 9) + 1;
+      setDisplayNumber(fakeNum.toString());
+      
+      if (currentStep >= steps) {
+        clearInterval(spinInterval);
+        setDisplayNumber(finalNum.toString());
+      }
+    }, stepDuration);
+  }, [updateStat, currentScreen]);
 
   const data: StatItem[] = stats.map((count: number, i: number) => ({
     key: (i + 1).toString(),
@@ -79,7 +100,7 @@ const AppContent = (): JSX.Element => {
           </View>
           
           <View style={styles.numberContainer}>
-            <Text style={styles.numberText}>{number}</Text>
+            <Text style={styles.numberText}>{displayNumber}</Text>
           </View>
           
           <View style={styles.buttonRow}>
@@ -204,7 +225,7 @@ const styles = StyleSheet.create({
   numberText: {
     fontSize: 144,
     color: '#ffffff',
-    fontWeight: '200',
+    fontWeight: 'bold',
     fontVariant: ['tabular-nums'],
   },
   flatListContent: {
