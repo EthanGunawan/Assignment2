@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     flex: 1,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   backButtonContainer: {
     paddingHorizontal: 4,
@@ -230,6 +230,7 @@ const styles = StyleSheet.create({
   },
   flatListContent: {
     padding: 24,
+    alignItems: 'center',
     paddingTop: 16,
     flexGrow: 1,
   },
