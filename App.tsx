@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 24,
     paddingVertical: 24,
-    backgroundColor: 'rgba(0,0,0,0.1)',
+    
   },
   button: {
     backgroundColor: '#7f5539',
@@ -266,7 +266,8 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
+    textAlign: 'center'
   },
 });
