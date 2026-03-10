@@ -1,12 +1,12 @@
-
-import React, { useState, useContext, createContext, useCallback } from 'react';
+// App.tsx - Commit 7: Connect Generate to Statistics Tracking
+import React, { useState, useContext, createContext, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
+  FlatList,
 } from 'react-native';
-
 
 interface StatisticsContextType {
   stats: number[];
@@ -14,10 +14,14 @@ interface StatisticsContextType {
   clearStats: () => void;
 }
 
+interface StatItem {
+  key: string;
+  label: string;
+}
 
 const StatisticsContext = createContext<StatisticsContextType | null>(null);
 
-const StatisticsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const StatisticsProvider = ({ children }: { children: React.ReactNode }): JSX.Element => {
   const [stats, setStats] = useState<number[]>(Array(9).fill(0));
 
   const updateStat = useCallback((num: number) => {
@@ -37,47 +41,102 @@ const StatisticsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 };
 
-// -------------------------------
-// MAIN APP COMPONENT (unchanged for now)
-// -------------------------------
-const AppContent = () => {
+const AppContent = (): JSX.Element => {
+  const [currentScreen, setCurrentScreen] = useState<'home' | 'stats'>('home');
   const [number, setNumber] = useState('...');
+  const context = useContext(StatisticsContext)!;
+  const { stats, updateStat, clearStats } = context;
 
-  const generateNumber = () => {
+  useEffect(() => {
+    if (currentScreen === 'home') {
+      setNumber('...');
+    }
+  }, [currentScreen]);
+
+  const generateNumber = (): void => {
     const num = Math.floor(Math.random() * 9) + 1;
     setNumber(num.toString());
+    updateStat(num);
   };
+
+  const data: StatItem[] = stats.map((count: number, i: number) => ({
+    key: (i + 1).toString(),
+    label: `Number ${i + 1}: ${count} times`,
+  }));
+
+  if (currentScreen === 'home') {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerText}>Random Number Generator</Text>
+        </View>
+        
+        <View style={styles.numberContainer}>
+          <Text style={styles.numberText}>{number}</Text>
+        </View>
+        
+        <View style={styles.buttonRow}>
+          <TouchableOpacity 
+            style={styles.button} 
+            activeOpacity={0.7} 
+            onPress={generateNumber}
+          >
+            <Text style={styles.buttonText}>Generate</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.button}
+            activeOpacity={0.7}
+            onPress={() => setCurrentScreen('stats')}
+          >
+            <Text style={styles.buttonText}>View Statistics</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerText}>Random Number Generator</Text>
-      </View>
-      
-      {/* Number Display */}
-      <View style={styles.numberContainer}>
-        <Text style={styles.numberText}>{number}</Text>
-      </View>
-      
-      {/* Buttons */}
-      <View style={styles.buttonRow}>
         <TouchableOpacity 
-          style={styles.button} 
-          activeOpacity={0.7} 
-          onPress={generateNumber}
+          style={styles.backButtonContainer}
+          onPress={() => setCurrentScreen('home')}
+          activeOpacity={0.7}
         >
-          <Text style={styles.buttonText}>Generate</Text>
+          <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} activeOpacity={0.7}>
-          <Text style={styles.buttonText}>View Statistics</Text>
+        <Text style={styles.headerText}>Statistics</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+      
+      <FlatList
+        data={data}
+        renderItem={({ item }) => (
+          <View style={styles.statItem}>
+            <Text style={styles.statText}>{item.label}</Text>
+          </View>
+        )}
+        contentContainerStyle={styles.flatListContent}
+        showsVerticalScrollIndicator={false}
+      />
+      
+      <View style={styles.buttonRow}>
+        <TouchableOpacity style={styles.button} activeOpacity={0.7} onPress={clearStats}>
+          <Text style={styles.buttonText}>Clear Statistics</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          activeOpacity={0.7}
+          onPress={() => setCurrentScreen('home')}
+        >
+          <Text style={styles.buttonText}>Back to Home</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 };
 
-const App: React.FC = () => {
+const App = (): JSX.Element => {
   return (
     <StatisticsProvider>
       <AppContent />
@@ -87,22 +146,41 @@ const App: React.FC = () => {
 
 export default App;
 
-// Styles unchanged from Commit 3
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#b08968',
   },
   header: {
+    flexDirection: 'row',
     backgroundColor: '#7f5539',
     paddingHorizontal: 16,
     paddingVertical: 16,
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   headerText: {
     color: '#ffffff',
     fontSize: 18,
     fontWeight: 'bold',
+    flex: 1,
     textAlign: 'center',
+    marginLeft: -20,
+  },
+  backButtonContainer: {
+    padding: 4,
+  },
+  backButton: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  headerSpacer: {
+    width: 24,
   },
   numberContainer: {
     flex: 1,
@@ -113,6 +191,22 @@ const styles = StyleSheet.create({
     fontSize: 144,
     color: '#ffffff',
     fontWeight: '200',
+    fontVariant: ['tabular-nums'],
+  },
+  flatListContent: {
+    padding: 24,
+    paddingTop: 16,
+    flexGrow: 1,
+  },
+  statItem: {
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  statText: {
+    fontSize: 18,
+    color: '#ffffff',
+    fontWeight: '500',
   },
   buttonRow: {
     flexDirection: 'row',
@@ -128,6 +222,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     flex: 1,
     alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   buttonText: {
     color: '#ffffff',
