@@ -1,4 +1,3 @@
-// App.tsx - Commit 7: Connect Generate to Statistics Tracking
 import React, { useState, useContext, createContext, useCallback, useEffect } from 'react';
 import {
   View,
@@ -6,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
+  SafeAreaView,
 } from 'react-native';
 
 interface StatisticsContextType {
@@ -25,10 +25,12 @@ const StatisticsProvider = ({ children }: { children: React.ReactNode }): JSX.El
   const [stats, setStats] = useState<number[]>(Array(9).fill(0));
 
   const updateStat = useCallback((num: number) => {
-    const updated = [...stats];
-    updated[num - 1] += 1;
-    setStats(updated);
-  }, [stats]);
+    setStats(prev => {
+      const updated = [...prev];
+      updated[num - 1] += 1;
+      return updated;
+    });
+  }, []);
 
   const clearStats = useCallback(() => {
     setStats(Array(9).fill(0));
@@ -53,86 +55,94 @@ const AppContent = (): JSX.Element => {
     }
   }, [currentScreen]);
 
-  const generateNumber = (): void => {
+  const generateNumber = useCallback((): void => {
     const num = Math.floor(Math.random() * 9) + 1;
     setNumber(num.toString());
     updateStat(num);
-  };
+  }, [updateStat]);
 
   const data: StatItem[] = stats.map((count: number, i: number) => ({
     key: (i + 1).toString(),
     label: `Number ${i + 1}: ${count} times`,
   }));
 
+  const goBack = useCallback(() => {
+    setCurrentScreen('home');
+  }, []);
+
   if (currentScreen === 'home') {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Random Number Generator</Text>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.headerText}>Random Number Generator</Text>
+          </View>
+          
+          <View style={styles.numberContainer}>
+            <Text style={styles.numberText}>{number}</Text>
+          </View>
+          
+          <View style={styles.buttonRow}>
+            <TouchableOpacity 
+              style={styles.button} 
+              activeOpacity={0.7} 
+              onPress={generateNumber}
+            >
+              <Text style={styles.buttonText}>Generate</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.button}
+              activeOpacity={0.7}
+              onPress={() => setCurrentScreen('stats')}
+            >
+              <Text style={styles.buttonText}>View Statistics</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-        
-        <View style={styles.numberContainer}>
-          <Text style={styles.numberText}>{number}</Text>
-        </View>
-        
-        <View style={styles.buttonRow}>
-          <TouchableOpacity 
-            style={styles.button} 
-            activeOpacity={0.7} 
-            onPress={generateNumber}
-          >
-            <Text style={styles.buttonText}>Generate</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.button}
-            activeOpacity={0.7}
-            onPress={() => setCurrentScreen('stats')}
-          >
-            <Text style={styles.buttonText}>View Statistics</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButtonContainer}
-          onPress={() => setCurrentScreen('home')}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerText}>Statistics</Text>
-        <View style={styles.headerSpacer} />
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButtonContainer}
+            onPress={goBack}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.backButton}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerText}>Statistics</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+        
+        <FlatList
+          data={data}
+          renderItem={({ item }) => (
+            <View style={styles.statItem}>
+              <Text style={styles.statText}>{item.label}</Text>
+            </View>
+          )}
+          contentContainerStyle={styles.flatListContent}
+          showsVerticalScrollIndicator={false}
+        />
+        
+        <View style={styles.buttonRow}>
+          <TouchableOpacity style={styles.button} activeOpacity={0.7} onPress={clearStats}>
+            <Text style={styles.buttonText}>Clear Statistics</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.button}
+            activeOpacity={0.7}
+            onPress={goBack}
+          >
+            <Text style={styles.buttonText}>Back to Home</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      
-      <FlatList
-        data={data}
-        renderItem={({ item }) => (
-          <View style={styles.statItem}>
-            <Text style={styles.statText}>{item.label}</Text>
-          </View>
-        )}
-        contentContainerStyle={styles.flatListContent}
-        showsVerticalScrollIndicator={false}
-      />
-      
-      <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.button} activeOpacity={0.7} onPress={clearStats}>
-          <Text style={styles.buttonText}>Clear Statistics</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.7}
-          onPress={() => setCurrentScreen('home')}
-        >
-          <Text style={styles.buttonText}>Back to Home</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -147,6 +157,9 @@ const App = (): JSX.Element => {
 export default App;
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: '#b08968',
@@ -154,7 +167,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     backgroundColor: '#7f5539',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 16,
     alignItems: 'center',
     elevation: 4,
@@ -169,18 +182,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
-    marginLeft: -20,
   },
   backButtonContainer: {
-    padding: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+    marginRight: 8,
   },
   backButton: {
     color: '#ffffff',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
   },
   headerSpacer: {
-    width: 24,
+    width: 32,
   },
   numberContainer: {
     flex: 1,
