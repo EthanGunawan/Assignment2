@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useContext, createContext, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,44 @@ import {
   StyleSheet,
 } from 'react-native';
 
-const App = () => {
+
+interface StatisticsContextType {
+  stats: number[];
+  updateStat: (num: number) => void;
+  clearStats: () => void;
+}
+
+
+const StatisticsContext = createContext<StatisticsContextType | null>(null);
+
+const StatisticsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [stats, setStats] = useState<number[]>(Array(9).fill(0));
+
+  const updateStat = useCallback((num: number) => {
+    const updated = [...stats];
+    updated[num - 1] += 1;
+    setStats(updated);
+  }, [stats]);
+
+  const clearStats = useCallback(() => {
+    setStats(Array(9).fill(0));
+  }, []);
+
+  return (
+    <StatisticsContext.Provider value={{ stats, updateStat, clearStats }}>
+      {children}
+    </StatisticsContext.Provider>
+  );
+};
+
+// -------------------------------
+// MAIN APP COMPONENT (unchanged for now)
+// -------------------------------
+const AppContent = () => {
   const [number, setNumber] = useState('...');
 
   const generateNumber = () => {
-    const num = Math.floor(Math.random() * 9) + 1; // 1-9
+    const num = Math.floor(Math.random() * 9) + 1;
     setNumber(num.toString());
   };
 
@@ -44,9 +77,17 @@ const App = () => {
   );
 };
 
+const App: React.FC = () => {
+  return (
+    <StatisticsProvider>
+      <AppContent />
+    </StatisticsProvider>
+  );
+};
+
 export default App;
 
-// Styles unchanged from Commit 2
+// Styles unchanged from Commit 3
 const styles = StyleSheet.create({
   container: {
     flex: 1,
