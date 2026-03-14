@@ -1,4 +1,4 @@
-import React, { useState, useContext, createContext, useCallback, useEffect } from 'react';
+import React, { useState, useContext, createContext, useCallback, JSX } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,10 @@ import {
   FlatList,
   SafeAreaView,
 } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+const Stack = createNativeStackNavigator();
 
 interface StatisticsContextType {
   stats: number[];
@@ -43,23 +47,14 @@ const StatisticsProvider = ({ children }: { children: React.ReactNode }): JSX.El
   );
 };
 
-const AppContent = (): JSX.Element => {
-  const [currentScreen, setCurrentScreen] = useState<'home' | 'stats'>('home');
+// Home Screen Component - NO StatusBar component
+const HomeScreen = ({ navigation }: { navigation: any }) => {
   const [displayNumber, setDisplayNumber] = useState('...');
-  const [number, setNumber] = useState('...');
+  const [, setNumber] = useState('...');
   const context = useContext(StatisticsContext)!;
-  const { stats, updateStat, clearStats } = context;
+  const { updateStat } = context;
 
-  useEffect(() => {
-    if (currentScreen === 'home') {
-      setNumber('...');
-      setDisplayNumber('...');
-    }
-  }, [currentScreen]);
-
-  const generateNumber = useCallback((): void => {
-    if (currentScreen !== 'home') return;
-
+  const generateNumber = useCallback(() => {
     const finalNum = Math.floor(Math.random() * 9) + 1;
     setNumber(finalNum.toString());
     updateStat(finalNum);
@@ -80,49 +75,49 @@ const AppContent = (): JSX.Element => {
         setDisplayNumber(finalNum.toString());
       }
     }, stepDuration);
-  }, [updateStat, currentScreen]);
+  }, [updateStat]);
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerText}>Random Number Generator</Text>
+        </View>
+        
+        <View style={styles.numberContainer}>
+          <Text style={styles.numberText}>{displayNumber}</Text>
+        </View>
+        
+        <View style={styles.buttonRow}>
+          <TouchableOpacity 
+            style={styles.button} 
+            activeOpacity={0.7} 
+            onPress={generateNumber}
+          >
+            <Text style={styles.buttonText}>Generate</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.button}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Stats')}
+          >
+            <Text style={styles.buttonText}>View Statistics</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+// Stats Screen Component - NO StatusBar component
+const StatsScreen = ({ navigation }: { navigation: any }) => {
+  const context = useContext(StatisticsContext)!;
+  const { stats, clearStats } = context;
 
   const data: StatItem[] = stats.map((count: number, i: number) => ({
     key: (i + 1).toString(),
     label: `Number ${i + 1}: ${count} times`,
   }));
-
-  const goBack = useCallback(() => {
-    setCurrentScreen('home');
-  }, []);
-
-  if (currentScreen === 'home') {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.headerText}>Random Number Generator</Text>
-          </View>
-          
-          <View style={styles.numberContainer}>
-            <Text style={styles.numberText}>{displayNumber}</Text>
-          </View>
-          
-          <View style={styles.buttonRow}>
-            <TouchableOpacity 
-              style={styles.button} 
-              activeOpacity={0.7} 
-              onPress={generateNumber}
-            >
-              <Text style={styles.buttonText}>Generate</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.button}
-              activeOpacity={0.7}
-              onPress={() => setCurrentScreen('stats')}
-            >
-              <Text style={styles.buttonText}>View Statistics</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -130,7 +125,7 @@ const AppContent = (): JSX.Element => {
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButtonContainer}
-            onPress={goBack}
+            onPress={() => navigation.goBack()}
             activeOpacity={0.7}
           >
             <Text style={styles.backButton}>←</Text>
@@ -157,7 +152,7 @@ const AppContent = (): JSX.Element => {
           <TouchableOpacity
             style={styles.button}
             activeOpacity={0.7}
-            onPress={goBack}
+            onPress={() => navigation.goBack()}
           >
             <Text style={styles.buttonText}>Back to Home</Text>
           </TouchableOpacity>
@@ -170,7 +165,29 @@ const AppContent = (): JSX.Element => {
 const App = (): JSX.Element => {
   return (
     <StatisticsProvider>
-      <AppContent />
+      <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: '#b08968' },
+          }}
+        >
+          <Stack.Screen 
+            name="Home" 
+            component={HomeScreen}
+            options={{
+              statusBarStyle: 'light',
+            }}
+          />
+          <Stack.Screen 
+            name="Stats" 
+            component={StatsScreen}
+            options={{
+              statusBarStyle: 'light',
+            }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
     </StatisticsProvider>
   );
 };
@@ -248,7 +265,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 24,
     paddingVertical: 24,
-    
   },
   button: {
     backgroundColor: '#7f5539',
