@@ -1,4 +1,4 @@
-import React, { useState, useContext, createContext, useCallback, JSX } from 'react';
+import React, { useState, useContext, createContext, useCallback, useEffect, JSX } from 'react';
 import {
   View,
   Text,
@@ -47,12 +47,25 @@ const StatisticsProvider = ({ children }: { children: React.ReactNode }): JSX.El
   );
 };
 
-// Home Screen Component - NO StatusBar component
+
 const HomeScreen = ({ navigation }: { navigation: any }) => {
   const [displayNumber, setDisplayNumber] = useState('...');
   const [, setNumber] = useState('...');
   const context = useContext(StatisticsContext)!;
   const { updateStat } = context;
+
+
+   useEffect(() => {
+    setDisplayNumber('...');
+    setNumber('...');
+
+    const unsubscribe = navigation.addListener('focus', () => {
+      setDisplayNumber('...');
+      setNumber('...');
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const generateNumber = useCallback(() => {
     const finalNum = Math.floor(Math.random() * 9) + 1;
@@ -109,7 +122,7 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
   );
 };
 
-// Stats Screen Component - NO StatusBar component
+
 const StatsScreen = ({ navigation }: { navigation: any }) => {
   const context = useContext(StatisticsContext)!;
   const { stats, clearStats } = context;
@@ -118,6 +131,14 @@ const StatsScreen = ({ navigation }: { navigation: any }) => {
     key: (i + 1).toString(),
     label: `Number ${i + 1}: ${count} times`,
   }));
+
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', () => {
+   
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -146,7 +167,13 @@ const StatsScreen = ({ navigation }: { navigation: any }) => {
         />
         
         <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.button} activeOpacity={0.7} onPress={clearStats}>
+          <TouchableOpacity 
+            style={styles.button} 
+            activeOpacity={0.7} 
+            onPress={() => {
+              clearStats(); 
+            }}
+          >
             <Text style={styles.buttonText}>Clear Statistics</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -193,6 +220,7 @@ const App = (): JSX.Element => {
 };
 
 export default App;
+
 
 const styles = StyleSheet.create({
   safeArea: {
